@@ -2,7 +2,6 @@
 // Copyright 2025-2026 Mindful Software LLC d/b/a Dartastic.io, All rights reserved.
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 import 'otel_aws_cloudfront_suppression.dart';
 
@@ -50,55 +49,71 @@ Future<T> tracedAwsCloudFront<T>({
   final t = tracer ?? OTel.tracerProvider().getTracer('otel_aws_cloudfront');
   final span = t.startSpan('cloudfront $operation', kind: SpanKind.client);
   try {
-    span.setStringAttribute('rpc.system', 'aws-api');
-    span.setStringAttribute('rpc.service', 'CloudFront');
+    span.addAttributes(
+        OTel.attributes([OTel.attributeString('rpc.system', 'aws-api')]));
+    span.addAttributes(
+        OTel.attributes([OTel.attributeString('rpc.service', 'CloudFront')]));
     final r = await invoke();
     final res = r.result;
     if (res != null) {
       if (res.distributionId != null) {
-        span.setStringAttribute(
-          'aws.cloudfront.distribution.id',
-          res.distributionId!,
-        );
+        span.addAttributes(OTel.attributes([
+          OTel.attributeString(
+            'aws.cloudfront.distribution.id',
+            res.distributionId!,
+          )
+        ]));
       }
       if (res.distributionDomain != null) {
-        span.setStringAttribute(
-          'aws.cloudfront.distribution.domain',
-          res.distributionDomain!,
-        );
+        span.addAttributes(OTel.attributes([
+          OTel.attributeString(
+            'aws.cloudfront.distribution.domain',
+            res.distributionDomain!,
+          )
+        ]));
       }
       if (res.edgeLocation != null) {
-        span.setStringAttribute(
-          'aws.cloudfront.edge_location',
-          res.edgeLocation!,
-        );
+        span.addAttributes(OTel.attributes([
+          OTel.attributeString(
+            'aws.cloudfront.edge_location',
+            res.edgeLocation!,
+          )
+        ]));
       }
       if (res.originName != null) {
-        span.setStringAttribute('aws.cloudfront.origin.name', res.originName!);
+        span.addAttributes(OTel.attributes([
+          OTel.attributeString('aws.cloudfront.origin.name', res.originName!)
+        ]));
       }
       if (res.cacheHit != null) {
-        span.setBoolAttribute('aws.cloudfront.cache.hit', res.cacheHit!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeBool('aws.cloudfront.cache.hit', res.cacheHit!)]));
       }
       if (res.bytes != null) {
-        span.setIntAttribute('http.response.body.size', res.bytes!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeInt('http.response.body.size', res.bytes!)]));
       }
       if (res.region != null) {
-        span.setStringAttribute('cloud.region', res.region!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('cloud.region', res.region!)]));
       }
       if (res.statusCode != null) {
-        span.setIntAttribute('http.response.status_code', res.statusCode!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeInt('http.response.status_code', res.statusCode!)]));
       }
       if (res.errorCode != null) {
-        span.setStringAttribute('cloudfront.error.code', res.errorCode!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('cloudfront.error.code', res.errorCode!)]));
       }
-      final fail =
-          res.errorCode != null ||
+      final fail = res.errorCode != null ||
           (res.statusCode != null && res.statusCode! >= 400);
       if (fail) {
-        span.setStringAttribute(
-          ErrorResource.errorType.key,
-          res.errorCode ?? 'cloudfront.error',
-        );
+        span.addAttributes(OTel.attributes([
+          OTel.attributeString(
+            ErrorResource.errorType.key,
+            res.errorCode ?? 'cloudfront.error',
+          )
+        ]));
         span.setStatus(SpanStatusCode.Error, res.errorMessage);
       }
     }
