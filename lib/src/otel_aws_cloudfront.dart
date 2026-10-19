@@ -1,7 +1,7 @@
-// Licensed under the Dartastic Pro Software License Agreement.
+// Licensed under the Apache License, Version 2.0
 // Copyright 2025-2026 Mindful Software LLC d/b/a Dartastic.io, All rights reserved.
 
-import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 import 'otel_aws_cloudfront_suppression.dart';
 
@@ -40,77 +40,80 @@ class AwsCloudFrontCallResult<T> {
 Future<T> tracedAwsCloudFront<T>({
   required String operation,
   required Future<AwsCloudFrontCallResult<T>> Function() invoke,
-  Tracer? tracer,
+  APITracer? tracer,
 }) async {
   if (awsCloudFrontInstrumentationSuppressed()) {
     final r = await invoke();
     return r.value;
   }
-  final t = tracer ?? OTel.tracerProvider().getTracer('otel_aws_cloudfront');
+  final t = tracer ?? OTelAPI.tracerProvider().getTracer('otel_aws_cloudfront');
   final span = t.startSpan('cloudfront $operation', kind: SpanKind.client);
   try {
     span.addAttributes(
-        OTel.attributes([OTel.attributeString('rpc.system', 'aws-api')]));
-    span.addAttributes(
-        OTel.attributes([OTel.attributeString('rpc.service', 'CloudFront')]));
+        OTelAPI.attributes([OTelAPI.attributeString('rpc.system', 'aws-api')]));
+    span.addAttributes(OTelAPI.attributes(
+        [OTelAPI.attributeString('rpc.service', 'CloudFront')]));
     final r = await invoke();
     final res = r.result;
     if (res != null) {
       if (res.distributionId != null) {
-        span.addAttributes(OTel.attributes([
-          OTel.attributeString(
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeString(
             'aws.cloudfront.distribution.id',
             res.distributionId!,
           )
         ]));
       }
       if (res.distributionDomain != null) {
-        span.addAttributes(OTel.attributes([
-          OTel.attributeString(
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeString(
             'aws.cloudfront.distribution.domain',
             res.distributionDomain!,
           )
         ]));
       }
       if (res.edgeLocation != null) {
-        span.addAttributes(OTel.attributes([
-          OTel.attributeString(
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeString(
             'aws.cloudfront.edge_location',
             res.edgeLocation!,
           )
         ]));
       }
       if (res.originName != null) {
-        span.addAttributes(OTel.attributes([
-          OTel.attributeString('aws.cloudfront.origin.name', res.originName!)
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeString('aws.cloudfront.origin.name', res.originName!)
         ]));
       }
       if (res.cacheHit != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeBool('aws.cloudfront.cache.hit', res.cacheHit!)]));
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeBool('aws.cloudfront.cache.hit', res.cacheHit!)
+        ]));
       }
       if (res.bytes != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeInt('http.response.body.size', res.bytes!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeInt('http.response.body.size', res.bytes!)]));
       }
       if (res.region != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('cloud.region', res.region!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('cloud.region', res.region!)]));
       }
       if (res.statusCode != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeInt('http.response.status_code', res.statusCode!)]));
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeInt('http.response.status_code', res.statusCode!)
+        ]));
       }
       if (res.errorCode != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('cloudfront.error.code', res.errorCode!)]));
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeString('cloudfront.error.code', res.errorCode!)
+        ]));
       }
       final fail = res.errorCode != null ||
           (res.statusCode != null && res.statusCode! >= 400);
       if (fail) {
-        span.addAttributes(OTel.attributes([
-          OTel.attributeString(
-            ErrorResource.errorType.key,
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeString(
+            ErrorAttributes.errorType.key,
             res.errorCode ?? 'cloudfront.error',
           )
         ]));
